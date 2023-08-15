@@ -17,14 +17,14 @@ from datetime import datetime
 class MigrationManager(object):
 
     NEW_MIGRATION_STRING = """
-    from mongodb_migrations.base import BaseMigration
+from mongodb_migrations.base import BaseMigration
     
-    class Migration(BaseMigration):
-        def upgrade(self):
-            pass
-            
-        def downgrade(self)
-            pass
+class Migration(BaseMigration):
+    def upgrade(self):
+        pass
+        
+    def downgrade(self):
+        pass
     """
 
     def __init__(self, config, migrations_path):
@@ -54,3 +54,4 @@ class MigrationManager(object):
             fh.write(self.NEW_MIGRATION_STRING)
 
         print('Migration file created: {}'.format(filename))
+
