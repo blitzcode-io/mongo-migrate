@@ -12,20 +12,25 @@
 """
 import os.path
 from datetime import datetime
+from string import Template
 
 
 class MigrationManager(object):
 
-    NEW_MIGRATION_STRING = """
-from mongodb_migrations.base import BaseMigration
-    
+    NEW_MIGRATION_STRING = Template("""
+from mongo_migrate.base_migrate import BaseMigration
+
+
 class Migration(BaseMigration):
     def upgrade(self):
         pass
         
     def downgrade(self):
         pass
-    """
+        
+    def comment(self):
+        return '$comment'
+    """)
 
     def __init__(self, config, migrations_path):
         self.config = config        # database config - host, port, db
@@ -37,11 +42,6 @@ class Migration(BaseMigration):
 
     def create_migration(self, title, message):
         """Create the folder and the template migration file."""
-        # Check if migration folder exists, if not create the folder,
-        # Get the current datetime in YYYYMMDDHHmmSS format, evaluate the file name.
-        # Create a template string.
-        # Save it to a file with name evaluated.
-
         if not os.path.exists(self.migrations_path):
             os.makedirs(self.migrations_path)
 
@@ -51,7 +51,7 @@ class Migration(BaseMigration):
             title)
 
         with open(filename, 'w') as fh:
-            fh.write(self.NEW_MIGRATION_STRING)
+            fh.write(self.NEW_MIGRATION_STRING.safe_substitute(comment=message))
 
         print('Migration file created: {}'.format(filename))
 
