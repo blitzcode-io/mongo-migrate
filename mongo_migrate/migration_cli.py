@@ -19,14 +19,6 @@ from dataclasses import dataclass
 from mongo_migrate.migration_manager import MigrationManager
 
 
-class MigrationCli(object):
-    def __init__(self):
-        pass
-
-    def create(self):
-        pass
-
-
 @dataclass
 class Config:
     host: str
@@ -34,16 +26,24 @@ class Config:
     database: str
 
 
-
 def subparser_for_create(subparsers):
     # sub parser for create
     create_subparser = subparsers.add_parser('create', help='create a new migration')
+    create_subparser.set_defaults(func=create_migration)
+
     create_subparser.add_argument('--host', help='provide the database host', action='store', dest='host')
     create_subparser.add_argument('--port', help='provide the database port', action='store', dest='port')
     create_subparser.add_argument('--database', help='provide the database name', action='store', dest='database')
     create_subparser.add_argument('--migrations', help='provide the folder to store migrations', default='migrations', action='store', dest='migrations')
     create_subparser.add_argument('--title', help='provide the folder to store migrations', default='version', action='store', dest='title')
     create_subparser.add_argument('--message', help='provide the folder to store migrations', required=True, action='store', dest='message')
+
+
+def create_migration(args):
+    """Entry point for create migration command"""
+    config = Config(args.host, args.port, args.database)
+    m = MigrationManager(config, args.migrations)
+    m.create_migration(args.title, args.message)
 
 
 def subparser_for_upgrade(subparsers):
@@ -60,15 +60,13 @@ def parse_arguments():
     subparsers = parser.add_subparsers()
     subparser_for_create(subparsers)
     subparser_for_upgrade(subparsers)
-
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.func(args)
 
 
 def main():
-    cmdline = parse_arguments()
-    config = Config(cmdline.host, cmdline.port, cmdline.database)
-    m = MigrationManager(config, cmdline.migrations)
-    m.create_migration(cmdline.title, cmdline.message)
+    parse_arguments()
+
 
 if __name__ == '__main__':
     main()
