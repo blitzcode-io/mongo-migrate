@@ -59,6 +59,19 @@ def subparser_for_upgrade(subparsers):
     upgrade_subparser.add_argument('--type', help=argparse.SUPPRESS, action='store', dest='type', default='upgrade')
 
 
+def subparser_for_downgrade(subparsers):
+    """Subparser for upgrade command"""
+    upgrade_subparser = subparsers.add_parser('downgrade', help='downgrade the database to the specific migration')
+    upgrade_subparser.set_defaults(func=migrate)
+
+    upgrade_subparser.add_argument('--host', help='provide the database host', action='store', dest='host')
+    upgrade_subparser.add_argument('--port', help='provide the database port', action='store', dest='port')
+    upgrade_subparser.add_argument('--database', help='provide the database name', action='store', dest='database')
+    upgrade_subparser.add_argument('--migrations', help='provide the folder to store migrations', default='migrations', action='store', dest='migrations')
+    upgrade_subparser.add_argument('--upto', help='provide the folder to store migrations', action='store', dest='upto')
+    upgrade_subparser.add_argument('--type', help=argparse.SUPPRESS, action='store', dest='type', default='downgrade')
+
+
 def migrate(args):
     """Entry point for both upgrade and downgrade"""
     config = Config(args.host, args.port, args.database)
@@ -73,6 +86,7 @@ def parse_arguments():
     # Add subparser methods below
     subparser_for_create(subparsers)
     subparser_for_upgrade(subparsers)
+    subparser_for_downgrade(subparsers)
 
     # Generic parse call
     args = parser.parse_args()
