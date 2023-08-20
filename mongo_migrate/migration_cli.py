@@ -80,7 +80,7 @@ def migrate(args):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(prog='Mongo Migrate CLI')
+    parser = argparse.ArgumentParser(prog='mongo-migrate')
     subparsers = parser.add_subparsers()
 
     # Add subparser methods below
