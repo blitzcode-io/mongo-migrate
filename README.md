@@ -1,20 +1,24 @@
 # mongo-migrate
 
-Create mongodb migrations using python. 
+Create Mongodb migrations using Python. 
 
 MongoDB is a schemaless database but most of the time the data that you store in the database will end up have a loose schema. 
-The python library is aimed to solve the below problem scenarios: 
-  1. As your project grows, the schema also changes and grows with it. When you want to go back to a specific version of the code and run that version. Most of the time, you do not remember the database schema used with the partical version of code. This is where creating a migration file and keeping it under the version control along with your code helps. You can retrace the steps to that particular version of schema. 
-  2. Lastly, even if your code base is in another language, you can use the mongo-migrate package to create migrations. Exactly for this reason, mongo-migrate is coming out of the box with lot of sub commands. 
+The Python library is aimed to solve the below problem scenarios: 
+  1. As your project grows, the schema also changes and grows with it. When you want to go back to a specific version of the code and run that version. Most of the time, you do not remember the database schema used with the particular version of code. This is where creating a migration file and keeping it under version control along with your code helps. You can retrace the steps to that particular version of the schema. 
+  2. Lastly, even if your code base is in another language, you can use the Mongo-migrate package to create migrations. Exactly for this reason, mongo-migrate is coming out of the box with a lot of subcommands. 
 
-The mongo-migrate library can create migrations, perform upgrade and downgrade operations.
+The mongo-migrate library can create migrations, and perform upgrade and downgrade operations.
+
+# Installation
+
+    pip install mongo-migrate
 
 # Usage
 
     usage: mongo-migrate [-h] {create,upgrade,downgrade} ...
     
     positional arguments:
-      {create,upgrade,downgrade}
+      {create, upgrade, downgrade}
         create              create a new migration
         upgrade             upgrade the database to the specific migration
         downgrade           downgrade the database to the specific migration
@@ -29,15 +33,15 @@ The mongo-migrate library can create migrations, perform upgrade and downgrade o
     
     optional arguments:
       -h, --help            show this help message and exit
-      --host HOST           provide the database host
-      --port PORT           provide the database port
+      --host HOST           the database host
+      --port PORT           the database port
       --database DATABASE   provide the database name
       --migrations MIGRATIONS
                             provide the folder to store migrations
-      --title TITLE         provide the folder to store migrations
-      --message MESSAGE     provide the folder to store migrations
+      --title TITLE         title will be used in the file name
+      --message MESSAGE     message will be recorded as a comment inside the migration file
 
-Example command would look like:
+An example command would look like this:
     
     mongo-migrate create --host 127.0.0.1 --port 27017 --database test --message 'first migration'
 
@@ -48,14 +52,14 @@ Example command would look like:
 
     optional arguments:
       -h, --help            show this help message and exit
-      --host HOST           provide the database host
-      --port PORT           provide the database port
+      --host HOST           the database host
+      --port PORT           the database port
       --database DATABASE   provide the database name
       --migrations MIGRATIONS
                             provide the folder to store migrations
-      --upto UPTO           provide the folder to store migrations
+      --upto UPTO           target migration timestamp
 
-Example command would look like:
+An example command would look like this:
     
     mongo-migrate upgrade --host 127.0.0.1 --port 27017 --database test --upto 20230815092813
 
@@ -65,25 +69,23 @@ Example command would look like:
 
     optional arguments:
       -h, --help            show this help message and exit
-      --host HOST           provide the database host
-      --port PORT           provide the database port
+      --host HOST           the database host
+      --port PORT           the database port
       --database DATABASE   provide the database name
       --migrations MIGRATIONS
                             provide the folder to store migrations
-      --upto UPTO           provide the folder to store migrations
+      --upto UPTO           target migration timestamp
 
-Example command would look like:
+An example command would look like this:
     
     mongo-migrate downgrade --host 127.0.0.1 --port 27017 --database test --upto 20230815092813
 
-
-# Installation
-
-    pip install mongo-migrate
-
 # Planned Features
-  * Support for connection string, 
+  * Support for the connection string, 
   * Support for authenticated databases
-  * Support for configuration file to eliminate retyping the CLI arguments. 
+  * Support for configuration files to eliminate retyping the CLI arguments. 
   * More shortcuts for migration generation
-  * 
+
+If you encounter any issues, please raise it as a ticket in the issue tracker.
+If you like to contribute to this open-source project, let me know. 
+
