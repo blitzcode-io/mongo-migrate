@@ -1,19 +1,21 @@
-# mongo-migrate
+# Welcome to mongo-migrate
 
-Create Mongodb migrations using Python. 
+Migrate Mongodb seamlessly using Python and mongo-migrate. 
 
 MongoDB is a schemaless database but most of the time the data that you store in the database will end up have a loose schema. 
 The Python library is aimed to solve the below problem scenarios: 
   1. As your project grows, the schema also changes and grows with it. When you want to go back to a specific version of the code and run that version. Most of the time, you do not remember the database schema used with the particular version of code. This is where creating a migration file and keeping it under version control along with your code helps. You can retrace the steps to that particular version of the schema. 
   2. Lastly, even if your code base is in another language, you can use the Mongo-migrate package to create migrations. Exactly for this reason, mongo-migrate is coming out of the box with a lot of subcommands. 
 
+You can read my the detailed article [here](https://rahulgeorge.hashnode.dev/migrate-mongodb-data-seamlessly-with-mongo-migrate-and-python)
+
 The mongo-migrate library can create migrations, and perform upgrade and downgrade operations.
 
-# Installation
+### Installation
 
     pip install mongo-migrate
 
-# Usage
+### Usage
 
     usage: mongo-migrate [-h] {create,upgrade,downgrade} ...
     
@@ -26,6 +28,7 @@ The mongo-migrate library can create migrations, and perform upgrade and downgra
     optional arguments:
       -h, --help            show this help message and exit
 
+## Key Features
 
 ### Create Migrations
 
@@ -80,12 +83,15 @@ An example command would look like this:
     
     mongo-migrate downgrade --host 127.0.0.1 --port 27017 --database test --upto 20230815092813
 
-# Planned Features
-  * Support for the connection string, 
-  * Support for authenticated databases
-  * Support for configuration files to eliminate retyping the CLI arguments. 
-  * More shortcuts for migration generation
+## Planned Enhancements
 
-If you encounter any issues, please raise it as a ticket in the issue tracker.
-If you like to contribute to this open-source project, let me know. 
+Our commitment to continuous improvement includes planned features such as:
+  * Support for connection string, 
+  * Support for authenticated databases
+  * Configuration Files: Eliminate the need for repetitive CLI arguments. 
+  * More migration generation shortcuts
+
+## Get Involved
+If you encounter any issues, please raise it as a ticket in the [issue tracker.](https://github.com/blitzcode-io/mongo-migrate/issues)
+If you like to contribute to this open-source project, [let me know](https://www.linkedin.com/in/rahultgeorge05). 
 

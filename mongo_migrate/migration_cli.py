@@ -31,12 +31,12 @@ def subparser_for_create(subparsers):
     create_subparser = subparsers.add_parser('create', help='create a new migration')
     create_subparser.set_defaults(func=create_migration)
 
-    create_subparser.add_argument('--host', help='provide the database host', action='store', dest='host')
-    create_subparser.add_argument('--port', help='provide the database port', action='store', dest='port')
-    create_subparser.add_argument('--database', help='provide the database name', action='store', dest='database')
+    create_subparser.add_argument('--host', help='the database host', action='store', dest='host')
+    create_subparser.add_argument('--port', help='the database port', action='store', dest='port')
+    create_subparser.add_argument('--database', help='the database name', action='store', dest='database')
     create_subparser.add_argument('--migrations', help='provide the folder to store migrations. By default creates migrations/', default='migrations', action='store', dest='migrations')
-    create_subparser.add_argument('--title', help='title will be used in the file name', default='version', action='store', dest='title')
-    create_subparser.add_argument('--message', help='message will be recorded as a comment inside the migration file', required=True, action='store', dest='message')
+    create_subparser.add_argument('--title', help='short title that will be used in the file name. Default: version', default='version', action='store', dest='title')
+    create_subparser.add_argument('--message', help='short message that will be saved as a comment inside the migration file', required=True, action='store', dest='message')
 
 
 def create_migration(args):
@@ -48,12 +48,12 @@ def create_migration(args):
 
 def subparser_for_upgrade(subparsers):
     """Subparser for upgrade command"""
-    upgrade_subparser = subparsers.add_parser('upgrade', help='upgrade the database to the specific migration')
+    upgrade_subparser = subparsers.add_parser('upgrade', help='upgrade the database to the target migration version')
     upgrade_subparser.set_defaults(func=migrate)
 
-    upgrade_subparser.add_argument('--host', help='provide the database host', action='store', dest='host')
-    upgrade_subparser.add_argument('--port', help='provide the database port', action='store', dest='port')
-    upgrade_subparser.add_argument('--database', help='provide the database name', action='store', dest='database')
+    upgrade_subparser.add_argument('--host', help='the database host', action='store', dest='host')
+    upgrade_subparser.add_argument('--port', help='the database port', action='store', dest='port')
+    upgrade_subparser.add_argument('--database', help='the database name', action='store', dest='database')
     upgrade_subparser.add_argument('--migrations', help='provide the folder to store migrations. By default looks for migrations/', default='migrations', action='store', dest='migrations')
     upgrade_subparser.add_argument('--upto', help='target migration timestamp', action='store', dest='upto')
     upgrade_subparser.add_argument('--type', help=argparse.SUPPRESS, action='store', dest='type', default='upgrade')
@@ -61,12 +61,12 @@ def subparser_for_upgrade(subparsers):
 
 def subparser_for_downgrade(subparsers):
     """Subparser for upgrade command"""
-    upgrade_subparser = subparsers.add_parser('downgrade', help='downgrade the database to the specific migration')
+    upgrade_subparser = subparsers.add_parser('downgrade', help='downgrade the database to the target migration version')
     upgrade_subparser.set_defaults(func=migrate)
 
-    upgrade_subparser.add_argument('--host', help='provide the database host', action='store', dest='host')
-    upgrade_subparser.add_argument('--port', help='provide the database port', action='store', dest='port')
-    upgrade_subparser.add_argument('--database', help='provide the database name', action='store', dest='database')
+    upgrade_subparser.add_argument('--host', help='the database host', action='store', dest='host')
+    upgrade_subparser.add_argument('--port', help='the database port', action='store', dest='port')
+    upgrade_subparser.add_argument('--database', help='the database name', action='store', dest='database')
     upgrade_subparser.add_argument('--migrations', help='provide the folder to store migrations. By default looks for migrations/', default='migrations', action='store', dest='migrations')
     upgrade_subparser.add_argument('--upto', help='target migration timestamp', action='store', dest='upto')
     upgrade_subparser.add_argument('--type', help=argparse.SUPPRESS, action='store', dest='type', default='downgrade')
