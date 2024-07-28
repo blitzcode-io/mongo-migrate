@@ -51,6 +51,7 @@ class Migration(BaseMigration):
             raise MongoMigrateException('Cannot find the migrations path: {}'.format(self.migrations_path))
 
         all_migrations = list(filter(lambda x: re.match('\d+_.+\.py', x), os.listdir(self.migrations_path)))
+        all_migrations.sort()
         all_migrations_timestamp = list(map(self.timestamp_from_filename, all_migrations))
 
         if target_migration not in all_migrations_timestamp:
