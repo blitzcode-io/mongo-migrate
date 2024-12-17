@@ -17,9 +17,9 @@ from abc import abstractmethod
 
 class BaseMigration(object):
     def __init__(self, config):
-        mongo_uri = 'mongodb://%s:%s'       # Current version supports only simple db mechanism.
+        mongo_uri = 'mongodb://%s:%s@%s:%s'       # Current version supports only simple db mechanism.
 
-        client = pymongo.MongoClient(mongo_uri % (config.host, config.port))
+        client = pymongo.MongoClient(mongo_uri % (config.username, config.password, config.host, config.port))
         self.db = client[config.database]
 
     @abstractmethod
