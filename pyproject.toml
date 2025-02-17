@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mongo_migrate"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Rahul George", email="34202955+rahul-george@users.noreply.github.com" },
 ]

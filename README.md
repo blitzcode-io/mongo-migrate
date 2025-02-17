@@ -36,6 +36,7 @@ The mongo-migrate library can create migrations, and perform upgrade and downgra
     
     optional arguments:
       -h, --help            show this help message and exit
+      --uri HOST            the database URI
       --host HOST           the database host
       --port PORT           the database port
       --database DATABASE   provide the database name
@@ -55,6 +56,7 @@ An example command would look like this:
 
     optional arguments:
       -h, --help            show this help message and exit
+      --uri HOST            the database URI
       --host HOST           the database host
       --port PORT           the database port
       --database DATABASE   provide the database name
@@ -72,6 +74,7 @@ An example command would look like this:
 
     optional arguments:
       -h, --help            show this help message and exit
+      --uri HOST            the database URI
       --host HOST           the database host
       --port PORT           the database port
       --database DATABASE   provide the database name

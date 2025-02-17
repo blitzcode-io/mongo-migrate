@@ -21,6 +21,7 @@ from mongo_migrate.migration_manager import MigrationManager
 
 @dataclass
 class Config:
+    uri: str
     host: str
     port: int
     database: str
@@ -31,6 +32,7 @@ def subparser_for_create(subparsers):
     create_subparser = subparsers.add_parser('create', help='create a new migration')
     create_subparser.set_defaults(func=create_migration)
 
+    create_subparser.add_argument('--uri', help='the database URI', action='store', dest='uri')
     create_subparser.add_argument('--host', help='the database host', action='store', dest='host')
     create_subparser.add_argument('--port', help='the database port', action='store', dest='port')
     create_subparser.add_argument('--database', help='the database name', action='store', dest='database')
@@ -41,7 +43,7 @@ def subparser_for_create(subparsers):
 
 def create_migration(args):
     """Entry point for create migration command"""
-    config = Config(args.host, args.port, args.database)
+    config = Config(uri=args.uri if args.uri else None, host=args.host, port=args.port, database=args.database)
     m = MigrationManager(config, args.migrations)
     m.create_migration(args.title, args.message)
 
@@ -51,6 +53,7 @@ def subparser_for_upgrade(subparsers):
     upgrade_subparser = subparsers.add_parser('upgrade', help='upgrade the database to the target migration version')
     upgrade_subparser.set_defaults(func=migrate)
 
+    upgrade_subparser.add_argument('--uri', help='the database URI', action='store', dest='uri')
     upgrade_subparser.add_argument('--host', help='the database host', action='store', dest='host')
     upgrade_subparser.add_argument('--port', help='the database port', action='store', dest='port')
     upgrade_subparser.add_argument('--database', help='the database name', action='store', dest='database')
@@ -64,6 +67,7 @@ def subparser_for_downgrade(subparsers):
     upgrade_subparser = subparsers.add_parser('downgrade', help='downgrade the database to the target migration version')
     upgrade_subparser.set_defaults(func=migrate)
 
+    upgrade_subparser.add_argument('--uri', help='the database URI', action='store', dest='uri')
     upgrade_subparser.add_argument('--host', help='the database host', action='store', dest='host')
     upgrade_subparser.add_argument('--port', help='the database port', action='store', dest='port')
     upgrade_subparser.add_argument('--database', help='the database name', action='store', dest='database')
@@ -74,7 +78,7 @@ def subparser_for_downgrade(subparsers):
 
 def migrate(args):
     """Entry point for both upgrade and downgrade"""
-    config = Config(args.host, args.port, args.database)
+    config = Config(uri=args.uri if args.uri else None, host=args.host, port=args.port, database=args.database)
     m = MigrationManager(config, args.migrations)
     m.migrate(args.type, args.upto)
 
