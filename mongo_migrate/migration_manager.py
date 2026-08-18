@@ -19,10 +19,14 @@ from string import Template
 
 
 import pymongo
+from pymongo.database import Database
 
+from mongo_migrate.enums import BaseFlag, Direction, DirectionTargetOptions
 from mongo_migrate.exceptions import MongoMigrateException
 from mongo_migrate.base_migrate import BaseMigration
-
+from mongo_migrate.migration_walker import MigrationWalker
+from mongo_migrate.config import Config
+from mongo_migrate.utils import direction_target_is_valid, is_keyword_target
 
 class MigrationManager(object):
 
@@ -40,32 +44,69 @@ class Migration(BaseMigration):
         return '$comment'
     """)
 
-    def __init__(self, config, migrations_path):
-        self.config = config        # database config - host, port, db
+    def __init__(self, config: Config, migrations_path: str):
+        self.config = config
         self.migrations_path = migrations_path
-        self.db = None
 
-    def migrate(self, direction, target_migration):
-        """Public method to perform the migration - upgrade or downgrade"""
+        migrate_instance = BaseMigration(self.config)
+        self.db: Database = migrate_instance.db
+
+    def get_migration_walker(self) -> MigrationWalker:
+        """
+        Get migration walker based on currently present migrations.
+
+        Get list of all migrations at moment of calling this method.
+        Create migration walker based on those migrations.
+        """
+        all_migrations = self.get_all_migrations()
+        ret = MigrationWalker(all_migrations)
+        return ret
+ 
+    def get_all_migrations(self) -> list[str]:
+        """
+        Get list of all migration filenames from oldest to newest.
+        """
+        ret = list(filter(lambda x: re.match('\d+_.+\.py', x), os.listdir(self.migrations_path)))
+        ret.sort()
+        return ret
+
+    def migrate(self, direction: Direction, target: str):
+        """
+        Public method to perform the migration - upgrade or downgrade
+
+        target options: timestamp or keyword target (head/base or +N/-N)
+
+        Check validity of requested operation (compatibility between direction and target).
+        Determine target migration timestamp if not given explicitly (e.g. upgrade head)
+        Full downgrade to base means timestamp None to trigger downgrade of the first timestamp as well.
+        Check if given timestamp is present in the history.
+        Upgrade or downgrade based on given direction.
+        """
+
+        direction = Direction(direction)
+
         if not os.path.exists(self.migrations_path):
             raise MongoMigrateException('Cannot find the migrations path: {}'.format(self.migrations_path))
 
-        all_migrations = list(filter(lambda x: re.match('\d+_.+\.py', x), os.listdir(self.migrations_path)))
-        all_migrations.sort()
-        all_migrations_timestamp = list(map(self.timestamp_from_filename, all_migrations))
+        if not direction_target_is_valid(direction, target):
+            raise MongoMigrateException(f"{direction.value} {target} is not a viable combination!\nOptions: {', '.join(DirectionTargetOptions.from_direction(direction) + ['timestamp (YYYYMMDDhhmmss)'])}")
 
-        if target_migration not in all_migrations_timestamp:
-            raise MongoMigrateException('Cannot find target migration in the migrations')
+        migration_walker = self.get_migration_walker()
+        latest_migrated_timestamp = self._get_latest_migrated_timestamp()        
 
-        migrate_instance = BaseMigration(self.config)
-        self.db = migrate_instance.db
+        target_timestamp = migration_walker.get_target_timestamp(target, latest_migrated_timestamp) if is_keyword_target(target) else target
 
-        if direction == 'upgrade':
-            self._do_upgrade(all_migrations, all_migrations_timestamp, target_migration)
+        if target_timestamp != BaseFlag.base and not migration_walker.has_migration(target_timestamp):
+            raise MongoMigrateException(f'Cannot find target migration {target_timestamp} in the migrations')
+
+        if direction == Direction.up:
+            self._do_upgrade(latest_migrated_timestamp, target_timestamp)
         else:
-            self._do_downgrade(all_migrations, all_migrations_timestamp, target_migration)
+            self._do_downgrade(latest_migrated_timestamp, target_timestamp)
 
-    def create_migration(self, title, message):
+        print("Migrations completed!")
+
+    def create_migration(self, title: str, message: str):
         """Create the folder and the template migration file."""
         if not os.path.exists(self.migrations_path):
             os.makedirs(self.migrations_path)
@@ -80,13 +121,16 @@ class Migration(BaseMigration):
 
         print('Migration file created: {}'.format(filename))
 
-    def _do_upgrade(self, all_migrations, all_migration_timestamps, target_migration):
+    def _do_upgrade(self, latest_migration: str | BaseFlag, target_migration: str):
         """
-        Performs the actual upgrade
+        Upgrade from latest to target migration.
 
-        Performs the upgrade from the last migrated version in the database.
-        :param all_migrations:
-        :param all_migration_timestamps:
+        If this is the first time running an upgrade, initialize migration history.
+        Identify the migrations to apply following the latest migrated version (if any)
+            and including the given target migration.
+        Perform upgrade method of the migration in corresponding module for each migration.
+        Create migration milestone for each upgrade.
+
         :param target_migration:
         :return:
         """
@@ -94,87 +138,83 @@ class Migration(BaseMigration):
         if not self._get_migration_history_collection():
             self.db.create_collection('migration_history')
 
-        # Identify the migrations to apply to reach the target
-        past_migrations = self._get_migration_history()
-        if len(past_migrations):
-            start_datetime = past_migrations[0]['migration_datetime']
-            start_idx = all_migration_timestamps.index(start_datetime) + 1
-        else:
-            start_idx = 0
+        migration_walker = self.get_migration_walker()
 
-        last_idx = all_migration_timestamps.index(target_migration)
-        migrations_to_apply = all_migrations[start_idx: last_idx+1]
+        if latest_migration == migration_walker.last_migration.timestamp:
+            print(f"Migrations at head; nothing to upgrade")
+            return
 
-        if not migrations_to_apply:
+        print(f"Upgrade: {latest_migration} -> {target_migration}")
+
+        migrations_to_apply = migration_walker.get_migrations_between(latest_migration, target_migration)
+
+        if len(migrations_to_apply) == 0:
             print("No new changes to apply")
             return
 
         # Perform migration by executing the upgrade method from the identified migrations
         sys.path.append(self.migrations_path)
         for migration in migrations_to_apply:
-            migration_module = import_module(migration[:-3])
+            migration_module = import_module(migration.basename)
             migration_instance = migration_module.Migration(self.config)
             migration_instance.upgrade()
 
-            self._create_migration_milestone(migration[0:14])
+            self._create_migration_milestone(migration.timestamp)
 
-            print("Applied migration: '{}'".format(migration))
+            print(f"{migration.previous.basename if migration.previous is not None else '.'} -> {migration.basename}")
 
-        print("Migration completed!")
 
-    def _do_downgrade(self, all_migrations, all_migration_timestamps, target_migration):
+    def _do_downgrade(self, latest_migration: str | BaseFlag, target_migration: str | BaseFlag):
         """
-        Performs the actual rollback operation.
+        Downgrade from latest migration to target migration.
+
+        Identify the migrations to apply starting from and preceding the latest migrated version (if any),
+            and up to (excluding) the given target migration.
 
         When rolling back, we cannot initiate the rollback from an intermediate state,
         So, we will always start from the last migrated location in the database.
-        :param all_migrations:
-        :param all_migration_timestamps:
         :param target_migration:
         :return:
         """
         if not self._get_migration_history_collection():
             raise MongoMigrateException("No past migrations found. Cannot perform rollback")
 
-        # Identify the migrations to apply to reach the target
-        past_migrations = self._get_migration_history()
-        if not len(past_migrations):
-            raise MongoMigrateException("No past migrations found. Cannot perform rollback")
+        if latest_migration == BaseFlag.base:
+            print(f"Migrations at base; nothing to downgrade")
+            return            
 
-        start_datetime = past_migrations[0]['migration_datetime']
-        start_idx = all_migration_timestamps.index(start_datetime)
+        print(f"Downgrade: {latest_migration} -> {target_migration}")
 
-        last_idx = all_migration_timestamps.index(target_migration)
-        migrations_to_apply = all_migrations[last_idx: start_idx + 1][-1::-1]
+        migration_walker = self.get_migration_walker()
+        migrations_to_apply = migration_walker.get_migrations_between(target_migration, latest_migration)
+        migrations_to_apply.reverse()
 
-        if not migrations_to_apply:
+        if len(migrations_to_apply) == 0:
             print("No new changes to apply")
             return
 
         # Perform migration by executing the downgrade method from the identified migrations
         sys.path.append(self.migrations_path)
         for migration in migrations_to_apply:
-            migration_module = import_module(migration[:-3])
+            migration_module = import_module(migration.basename)
             migration_instance = migration_module.Migration(self.config)
             migration_instance.downgrade()
 
-            self._delete_migration_milestone(migration[0:14])
+            self._delete_migration_milestone(migration.timestamp)
 
-            print("Applied migration: '{}'".format(migration))
+            print(f"{migration.basename} -> {migration.previous.basename if migration.previous is not None else '.'}")
 
-        print("Migration completed!")
 
-    def _get_migration_history_collection(self):
+    def _get_migration_history_collection(self) -> list[str]:
         return self.db.list_collection_names(filter={'name': 'migration_history'})
 
-    def _get_migration_history(self, db_filter=None):
+    def _get_migration_history(self, db_filter=None) -> list:
+        """
+        Get list of past migrations from newest to oldest.
+        """
         if db_filter is None:
             db_filter = {}
         return list(self.db.migration_history.find(db_filter).sort([('migration_datetime', pymongo.DESCENDING)]))
-
-    @classmethod
-    def timestamp_from_filename(cls, filename):
-        return filename.split('_')[0]
 
     def _create_migration_milestone(self, migration_datetime):
         self.db.migration_history.insert_one({'migration_datetime': migration_datetime,
@@ -182,3 +222,22 @@ class Migration(BaseMigration):
 
     def _delete_migration_milestone(self, migration_datetime):
         self.db.migration_history.delete_one({'migration_datetime': migration_datetime})
+
+    def _get_latest_migrated_timestamp(self) -> str | BaseFlag:
+        """
+        Get timestamp of the latest completed migration based on migration history.
+
+        If there aren't any completed migrations (no migration history present),
+            return base.
+        """
+        if not self._get_migration_history_collection():
+            return BaseFlag.base
+          
+        past_migrations = self._get_migration_history()
+
+        if len(past_migrations) == 0:
+            return BaseFlag.base
+        
+        ret = past_migrations[0]['migration_datetime']
+
+        return ret

@@ -13,3 +13,6 @@
 
 class MongoMigrateException(BaseException):
     pass
+
+class ConfigException(BaseException):
+    pass

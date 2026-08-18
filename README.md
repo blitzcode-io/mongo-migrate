@@ -51,7 +51,10 @@ An example command would look like this:
 
 ### Upgrade database
 
-    usage: mongo-migrate upgrade [-h] [--host HOST] [--port PORT] [--database DATABASE] [--migrations MIGRATIONS] [--upto UPTO]
+    usage: mongo-migrate upgrade [-h] [--host HOST] [--port PORT] [--database DATABASE] [--migrations MIGRATIONS] [--upto UPTO] [target_migration]
+
+    positional arguments:
+      target_migration      target migration timestamp or keyword (options: head, +N)
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -60,16 +63,27 @@ An example command would look like this:
       --database DATABASE   provide the database name
       --migrations MIGRATIONS
                             provide the folder to store migrations
-      --upto UPTO           target migration timestamp
+      --upto UPTO           target migration timestamp or keyword (options: head, +N)
 
-An example command would look like this:
+The positional argument `target_migration` is an alternative to the keyword argument `--upto` (the latter would override the former, at least one is required)
+
+Example commands would look like this:
     
-    mongo-migrate upgrade --host 127.0.0.1 --port 27017 --database test --upto 20230815092813
+    mongo-migrate upgrade --host 127.0.0.1 --port 27017 --database test 20230815092813
+    mongo-migrate upgrade --host 127.0.0.1 --port 27017 --database test head
+    mongo-migrate upgrade --host 127.0.0.1 --port 27017 --database test +3
+
+head: upgrade to and including the latest migration
+
++N: upgrade N next migrations
 
 ### Downgrade database
 
     usage: mongo-migrate downgrade [-h] [--host HOST] [--port PORT] [--database DATABASE] [--migrations MIGRATIONS] [--upto UPTO]
 
+    positional arguments:
+      target_migration      target migration timestamp or keyword (options: base, -N)
+
     optional arguments:
       -h, --help            show this help message and exit
       --host HOST           the database host
@@ -77,11 +91,45 @@ An example command would look like this:
       --database DATABASE   provide the database name
       --migrations MIGRATIONS
                             provide the folder to store migrations
-      --upto UPTO           target migration timestamp
+      --upto UPTO           target migration timestamp or keyword (options: base, -N)
 
-An example command would look like this:
+Example commands would look like this:
     
-    mongo-migrate downgrade --host 127.0.0.1 --port 27017 --database test --upto 20230815092813
+    mongo-migrate downgrade --host 127.0.0.1 --port 27017 --database test 20230815092813
+    mongo-migrate downgrade --host 127.0.0.1 --port 27017 --database test base
+    mongo-migrate downgrade --host 127.0.0.1 --port 27017 --database test -3 
+
+base: downgrade all migrations
+
+-N: downgrade this and N-1 previous migrations
+
+## Configuration file
+
+Some or all of the following settings can be set in a configuration file `mongomigrate.ini` with the following format:
+
+```ini
+[database]
+host = 127.0.0.1
+port = 27017
+database = test
+
+[migrations]
+migrations = mongo_migrations
+```
+
+as an alternative to keyword arguments (see `mongomigrate.ini.template` in this repository).
+
+This allows for shorter CLI commands. Examples:
+
+```bash
+$ mongo-migrate create --message 'first migration'
+$ mongo-migrate upgrade head
+$ mongo-migrate upgrade +3
+$ mongo-migrate downgrade base
+$ mongo-migrate downgrade -3
+```
+
+The settings must be provided either in `.ini` or as command line arguments, not both
 
 ## Planned Enhancements
 
